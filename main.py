@@ -42,7 +42,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: 
     return Token(access_token=access_token, token_type="bearer")
 
 
-@app.get("/usr", response_model=UserPublic)
+@app.get("/user", response_model=UserPublic)
 async def get_current_usr(user: Annotated[UserInDB, Depends(token_authen)]):
     return user
 

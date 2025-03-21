@@ -44,6 +44,7 @@ async def get_user_server_info(
 
     server_list = []
     for account in accounts:
+        print(account)
         try:
             # 获取实时服务器状态
             status_data = await get_server_status(account.server_ip)
@@ -60,7 +61,7 @@ async def get_user_server_info(
             # 记录错误但继续处理其他服务器
             print(f"Failed to get status for {account.server_ip}: {str(status_error)}")
 
-        return {"servers": server_list}
+    return {"servers": server_list}
 
 
 # except Exception as e:
