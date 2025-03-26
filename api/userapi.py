@@ -104,19 +104,17 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: 
 
 
 async def create_user(user: UserCreate, session: SessionDep):
-    try:
-        user = await get_user(user.username, session)
-        if not user:
-            user = UserInDB(**user.model_dump(), hashed_password=hashed_password(user.password))
-            session.add(user)
-            session.commit()
-            session.refresh(user)
-        else:
-            raise user_already_exists_exception
 
-    except Exception as e:
-        logger.error(e)
-        raise
+    user = await get_user(user.username, session)
+    if not user:
+        user = UserInDB(**user.model_dump(), hashed_password=hashed_password(user.password))
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+    else:
+        logger.error("cannot create user")
+        raise user_already_exists_exception
+
     return user
 
 

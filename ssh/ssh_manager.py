@@ -16,7 +16,7 @@ class SSHConnectionManager:
 
     async def get_connection(self, ip: str, username: str, password: str, port=22) -> Connection | None:
         """create or reuse ssh connection"""
-        connection_key = f"{username}@{ip} -p{port}"
+        connection_key = f"{username}@{ip} -p {port}"
 
         # if connection don't have a lock create a lock
         if connection_key not in self.locks:
@@ -48,7 +48,7 @@ class SSHConnectionManager:
                         "password": password,
                         "look_for_keys": False,
                     },
-                    connect_timeout=10
+                    connect_timeout=5
                 )
                 connection.config.run.env = {
                     'LANG': 'en_US.UTF-8',
@@ -63,9 +63,9 @@ class SSHConnectionManager:
             except Exception as e:
                 logger.error(f"Failed to create new SSH connection to {connection_key}: {str(e)}")
 
-    async def close_connection(self, ip: str, username: str):
+    async def close_connection(self, ip: str, username: str, port=22):
         """close specific SSH connection"""
-        connection_key = f"{username}@{ip}"
+        connection_key = f"{username}@{ip} -p {port}"
         if connection_key in self.connections:
             try:
                 self.connections[connection_key].close()
