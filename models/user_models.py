@@ -1,12 +1,13 @@
-from typing import Annotated
-from fastapi import Depends, HTTPException
-from sqlmodel import Field, SQLModel, select
-from database.db import SessionDep
+from sqlmodel import Field, SQLModel
+from logger import get_logger
+
+# 获取服务器状态模块的日志器
+logger = get_logger("main.user_control")
 
 
 class UserBase(SQLModel):
     username: str = Field()
-    active: bool = Field(default=False)
+    active: bool = Field(default=True)
 
 
 class UserInDB(UserBase, table=True):
@@ -30,22 +31,3 @@ class UserUpdate(UserBase):
     email: str = Field(default=None)
     password: str | None = None
 
-
-# 获取用户基础函数
-async def get_user(username: str, db: SessionDep):
-    # 通过 Session 查询用户
-    statement = select(UserInDB).where(UserInDB.username == username)
-    return db.exec(statement).first()
-
-
-# 检查用户是否激活的函数
-async def get_activate_user(username: str, db: SessionDep) -> UserInDB:
-    user = await get_user(username, db)
-    if not user:
-        raise HTTPException(status_code=400, detail="User is not exists")
-    if not user.active:
-        raise HTTPException(status_code=400, detail="User is not active")
-    return user
-
-
-UserDep = Annotated[UserInDB, Depends(get_activate_user)]
