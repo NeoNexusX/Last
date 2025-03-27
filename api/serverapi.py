@@ -72,7 +72,10 @@ async def get_server_status_linux(ip: str,
 
     if not connection:
         logger.error(f"cannot connect to {ip}:{port}")
-        raise server_account_exception
+        return ServerPublic(success=False,
+                            server_name="unknown",
+                            server_ip=ip,
+                            server_port=port)
 
     commands = {
         "hostname": "hostname | cut -d'.' -f1",

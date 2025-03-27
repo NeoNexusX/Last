@@ -105,8 +105,8 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: 
 
 async def create_user(user: UserCreate, session: SessionDep):
 
-    user = await get_user(user.username, session)
-    if not user:
+    user_past = await get_user(user.username, session)
+    if not user_past:
         user = UserInDB(**user.model_dump(), hashed_password=hashed_password(user.password))
         session.add(user)
         session.commit()

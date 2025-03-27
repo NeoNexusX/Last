@@ -16,7 +16,7 @@ class SSHConnectionManager:
 
     async def get_connection(self, ip: str, username: str, password: str, port=22) -> Connection | None:
         """create or reuse ssh connection"""
-        connection_key = f"{username}@{ip} -p {port}"
+        connection_key = f"{username}@{ip}"
 
         # if connection don't have a lock create a lock
         if connection_key not in self.locks:
@@ -44,6 +44,7 @@ class SSHConnectionManager:
                 connection = Connection(
                     host=ip,
                     user=username,
+                    port=port,
                     connect_kwargs={
                         "password": password,
                         "look_for_keys": False,
