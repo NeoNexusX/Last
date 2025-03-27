@@ -34,51 +34,48 @@
 
   ### 📊 **Data Visualization**
 
-  - See the frontend project:
-  - **RESTful API** Data Interface
-
+  - See the frontend project：
+  
+  BioSerWeb https://github.com/NeoNexusX/BioSerWeb 
+  
+- **RESTful API** Data Interface
+  
   ## Tech Stack 🛠️
-
+  
   |     Category      |  Technology Stack   |
   | :---------------: | :-----------------: |
   | Backend Framework |       FastAPI       |
   |     Database      |  SQLite (SQLModel)  |
   |  SSH Connection   |   Paramiko/Fabric   |
-  |    Data Models    | Pydantic + SQLModel |
+|    Data Models    | Pydantic + SQLModel |
   |   Async Support   | Python async/await  |
-  |  Logging System   |   Python logging    |
-
-  ## Quick Start 🚀
-
-  1. **Install Dependencies**
-
-     bash
-
+|  Logging System   |   Python logging    |
+  
+## Quick Start 🚀
+  
+1. **Install Dependencies**
+  
      ```bash
      pip install -r requirements.txt  
-     ```
-
+   ```
+     
   2. **Configure Environment**
-     Copy `.env.example` to `.env` and fill in your server details.
-
-  3. **Start the Service**
-
-     bash
-
-     ```bash
+   Copy `.env.example` to `.env` and fill in your server details.
+  
+3. **Start the Service**
+  
+   ```bash
      uvicorn main:app --reload  
      ```
-
-  4. **Access API Documentation**
+     
+4. **Access API Documentation**
      Open `http://localhost:8000/docs` in your browser.
-
-  ### Directory Structure
-
-  bash
-
-  ```bash
+  
+### Directory Structure
+  
+```bash
   # Project Root Directory  
-  ├── LICENSE           # Open-source license file (e.g., MIT/GPL)  
+├── LICENSE           # Open-source license file (e.g., MIT/GPL)  
   ├── README.md         # Project documentation  
   ├── api/              # API interface module  
   │   ├── __init__.py   # Python package initialization  
@@ -103,31 +100,31 @@
       ├── __init__.py  
       └── ssh_manager.py  # SSH connection pool management  
   ```
-
+  
   ## 🌟 Use Case Examples
-
-  - **IT Operations Teams**: Centralized monitoring of all development servers in small-to-medium enterprises.
+  
+- **IT Operations Teams**: Centralized monitoring of all development servers in small-to-medium enterprises.
   - **Researchers**: Real-time tracking of computing resource usage on small-to-medium-scale GPU servers for scientific research.
-  - **Individual Developers**: Managing multiple VPS and cloud instances.
-
+- **Individual Developers**: Managing multiple VPS and cloud instances.
+  
   ## 🤝 Contribution Guidelines
-
-  ### How to Contribute?
-
-  1. **Report Issues**: Submit detailed bug reports.
+  
+### How to Contribute?
+  
+1. **Report Issues**: Submit detailed bug reports.
   2. **Develop Features**: Claim `Good First Issue` tasks.
-  3. **Improve Documentation**: Enhance README or contribute translations.
-
+3. **Improve Documentation**: Enhance README or contribute translations.
+  
   ### Code Requirements
-
-  - Complies with **GPL-3.0** copyleft terms.
+  
+- Complies with **GPL-3.0** copyleft terms.
   - Passes `pre-commit` checks.
-  - Includes unit tests (`pytest`) **[To Be Supported]** (not required for now).
-
+- Includes unit tests (`pytest`) **[To Be Supported]** (not required for now).
+  
   ## 📜 License
-
-  **GNU General Public License v3.0 (GPL-3.0)**
-
-  - ✅ Allows free use, modification, and distribution.
+  
+**GNU General Public License v3.0 (GPL-3.0)**
+  
+- ✅ Allows free use, modification, and distribution.
   - ✅ Requires open-source derivative works.
-  - ❌ Prohibits closed-source commercialization.
+- ❌ Prohibits closed-source commercialization.

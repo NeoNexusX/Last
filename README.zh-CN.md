@@ -34,9 +34,9 @@
 
   ### 📊 **数据可视化**
 
-  - 右转前端项目，
+  - 右转前端项目
 
-    [BioSerWeb]: https://github.com/NeoNexusX/BioSerWeb
+    BioSerWeb： https://github.com/NeoNexusX/BioSerWeb 
 
   - **RESTful API** 数据接口
 
