@@ -7,3 +7,6 @@ starlette==0.46.1
 fabric~=3.2.2
 colorama~=0.4.6
 sqlalchemy~=2.0.39
+uvicorn==0.34.0
+python-multipart==0.0.20
+

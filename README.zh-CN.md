@@ -75,6 +75,36 @@
 4. **访问API文档**
    浏览器打开 `http://localhost:8000/docs`
 
+5. 对于 Docker 用户，你可以使用以下命令：
+
+   ```bash
+   docker push neonexusx/last:tagname
+   ```
+
+   然后启动开发容器：
+
+   ```bash
+   docker run -it \
+     --name last_dev \
+     -v $(pwd)/Last:/app/Last \
+     -p 8000:8000 \
+     -p 8001:22 \
+     neonexusx/last:py3.12.9_dev_v1.0
+   ```
+
+   其中，8001:22 是 SSH 端口，如果需要使用 SSH，可能需要运行：
+
+   ```bash
+   service ssh restart
+   ```
+
+   之后，你可以启动你的服务：
+
+   ```bash
+   cd Last/
+   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
 ### 目录介绍
 
 ```bash

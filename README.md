@@ -54,22 +54,52 @@ A server monitoring and management tool built with FastAPI, designed to remotely
 ## Quick Start 🚀
 
 1. **Install Dependencies**
-  
-     ```bash
-     pip install -r requirements.txt  
+
+   ```bash
+   pip install -r requirements.txt  
    ```
-   
+
   2. **Configure Environment**
       Copy `.env.example` to `.env` and fill in your server details.
-  
+
 3. **Start the Service**
-  
+
    ```bash
      uvicorn main:app --reload  
    ```
-   
+
 4. **Access API Documentation**
      Open `http://localhost:8000/docs` in your browser.
+
+For docker user you can use this :
+
+```bash
+docker push neonexusx/last:tagname
+```
+
+then start the dev container:
+
+```bash
+docker run -it \
+  --name last_dev \
+  -v $(pwd)/Last:/app/Last \
+  -p 8000:8000 \
+  -p 8001:22 \
+  neonexusx/last:py3.12.9_dev_v1.0
+```
+
+22 port is for ssh ,to use ssh may need :
+
+```bash
+service ssh restart
+```
+
+ then you can run your service;
+
+```bash
+cd Last/
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
 
 ### Directory Structure
 
