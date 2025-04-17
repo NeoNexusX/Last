@@ -10,11 +10,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jwt import ExpiredSignatureError, InvalidTokenError
 from sqlmodel import select
 from starlette import status
+
 from api.auth_api import credentials_exception, create_access_token, hashed_password, \
     verify_password, token_invalid_exception, token_expired_exception
-from models.auth import ACCESS_TOKEN_EXPIRE_MINUTES, Token, oauth2_scheme, SECRET_KEY, ALGORITHM, TokenData
 from database.db import SessionDep
 from logger import get_logger
+from models.auth import ACCESS_TOKEN_EXPIRE_MINUTES, Token, oauth2_scheme, SECRET_KEY, ALGORITHM, TokenData
+from models.email_models import TOTP
 from models.user_models import UserCreate, UserInDB, UserUpdate, UserPublic
 
 logger = get_logger("main.user_api")
@@ -32,6 +34,11 @@ user_not_exists_exception = HTTPException(
 user_not_active_exception = HTTPException(
     status_code=status.HTTP_400_BAD_REQUEST,  # 409 Conflict
     detail="Username not  activate",  # 明确提示用户已存在
+)
+
+user_verification_bad = HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,  # 409 Conflict
+    detail="verification code is wrong",  # 明确提示用户已存在
 )
 
 
@@ -104,18 +111,22 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: 
 
 
 async def create_user(user: UserCreate, session: SessionDep):
+    if TOTP.verify(user.verify_code, valid_window=30):
 
-    user_past = await get_user(user.username, session)
-    if not user_past:
-        user = UserInDB(**user.model_dump(), hashed_password=hashed_password(user.password))
-        session.add(user)
-        session.commit()
-        session.refresh(user)
+        user_past = await get_user(user.username, session)
+
+        if not user_past:
+            user = UserInDB(**user.model_dump(), hashed_password=hashed_password(user.password))
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        else:
+            logger.error("cannot create user")
+            raise user_already_exists_exception
+
+        return user
     else:
-        logger.error("cannot create user")
-        raise user_already_exists_exception
-
-    return user
+        raise user_verification_bad
 
 
 async def update_user(user: UserUpdate, user_past: Annotated[UserInDB, Depends(token_authen)], session: SessionDep):
@@ -135,7 +146,7 @@ async def del_user(user: Annotated[UserInDB, Depends(token_authen)], session: Se
 
 UserDep = Annotated[UserInDB, Depends(get_activate_user)]
 UserLoginDep = Annotated[Token, Depends(login)]
-UserCreateDep = Annotated[UserPublic, Depends(create_user)]
+UserCreateDep = Annotated[UserCreate, Depends(create_user)]
 UserUpdateDep = Annotated[UserPublic, Depends(update_user)]
 UserDeleDep = Annotated[UserPublic, Depends(del_user)]
 TokenDep = Annotated[UserInDB, Depends(token_authen)]

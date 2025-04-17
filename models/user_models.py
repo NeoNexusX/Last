@@ -1,4 +1,5 @@
 from sqlmodel import Field, SQLModel
+
 from logger import get_logger
 
 # 获取服务器状态模块的日志器
@@ -25,6 +26,7 @@ class UserPublic(UserBase):
 class UserCreate(UserBase):
     email: str
     password: str
+    verify_code: str
 
 
 class UserUpdate(UserBase):
