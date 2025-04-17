@@ -5,7 +5,7 @@ from typing import Annotated, Dict, Any
 from fastapi import HTTPException, Depends
 from sqlmodel import select, Session
 from starlette import status
-from api.userapi import TokenDep
+from api.user_api import TokenDep
 from database.db import SessionDep
 from logger import get_logger
 from models.server_models import ServerPublic, DiskInfo, GPUInfo, \
@@ -240,7 +240,6 @@ async def test_server_linux(ip: str, username: str, password: str, port=22):
 #########################
 # API
 #########################
-
 # find users server info
 async def get_user_server_info(user: TokenDep, session: SessionDep) -> ServerPublicList:
     # find user database information

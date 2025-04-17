@@ -114,8 +114,8 @@
 ├── api/ # API接口模块
 │ ├── init.py # Python包初始化文件
 │ ├── auth_api.py # 认证相关API（基于令牌的认证等）
-│ ├── serverapi.py # 服务器管理API
-│ └── userapi.py # 用户管理API（包含登录/注销功能）
+│ ├── server_api.py # 服务器管理API
+│ └── user_api.py # 用户管理API（包含登录/注销功能）
 ├── database/ # 数据库相关文件
 │ ├── bionet.db # SQLite数据库文件（自动生成于此）
 │ └── db.py # 数据库连接与操作

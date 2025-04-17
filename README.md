@@ -110,8 +110,8 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
   ├── api/              # API interface module  
   │   ├── __init__.py   # Python package initialization  
   │   ├── auth_api.py   # Authentication APIs (token-based auth, etc.)  
-  │   ├── serverapi.py  # Server management APIs  
-  │   └── userapi.py    # User management APIs (includes login/logout)  
+  │   ├── server_api.py  # Server management APIs  
+  │   └── user_api.py    # User management APIs (includes login/logout)  
   ├── database/         # Database-related files  
   │   ├── bionet.db     # SQLite database file (auto-created here)  
   │   └── db.py         # Database connection and operations  

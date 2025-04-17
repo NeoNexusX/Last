@@ -15,7 +15,7 @@ from api.auth_api import credentials_exception, create_access_token, hashed_pass
 from models.auth import ACCESS_TOKEN_EXPIRE_MINUTES, Token, oauth2_scheme, SECRET_KEY, ALGORITHM, TokenData
 from database.db import SessionDep
 from logger import get_logger
-from models.user_models import UserCreate, UserInDB, UserUpdate
+from models.user_models import UserCreate, UserInDB, UserUpdate, UserPublic
 
 logger = get_logger("main.user_api")
 
@@ -135,7 +135,7 @@ async def del_user(user: Annotated[UserInDB, Depends(token_authen)], session: Se
 
 UserDep = Annotated[UserInDB, Depends(get_activate_user)]
 UserLoginDep = Annotated[Token, Depends(login)]
-UserCreateDep = Annotated[Token, Depends(create_user)]
-UserUpdateDep = Annotated[Token, Depends(update_user)]
-UserDeleDep = Annotated[Token, Depends(del_user)]
+UserCreateDep = Annotated[UserPublic, Depends(create_user)]
+UserUpdateDep = Annotated[UserPublic, Depends(update_user)]
+UserDeleDep = Annotated[UserPublic, Depends(del_user)]
 TokenDep = Annotated[UserInDB, Depends(token_authen)]
