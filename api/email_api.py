@@ -14,8 +14,8 @@ from models.email_models import EmailConfirmResponseBase, EmailConfirmRequest, E
 logger = get_logger("main.email-api")
 
 email_send_exception = HTTPException(
-    status_code=status.HTTP_400_BAD_REQUEST,  # 409 Conflict
-    detail="Send Failed error by server reason",  # 明确提示用户已存在
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail="Send Failed error by server reason",
 )
 
 
@@ -23,13 +23,13 @@ async def send_mailgun_message(email_info: EmailConfirmResponseBase):
     MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY")
     MAILGUN_DOMAIN = os.getenv("MAILGUN_DOMAIN")
     MAILGUN_API_URL = f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages"
+    code = TOTP.now()
 
     request_data = EmailConfirmRequest.model_validate(
         {**email_info.model_dump(),
-         "text_content": "Confirm your email"}
+         "text_content": f"Welcome\r\n Your code is {code}"}
     )
-    logger.info(request_data)
-    logger.info(MAILGUN_API_KEY)
+    logger.info(f"Request data: {request_data}")
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
@@ -42,10 +42,11 @@ async def send_mailgun_message(email_info: EmailConfirmResponseBase):
                     "text": request_data.text_content
                 }
             )
-            response.raise_for_status()  # 如果请求失败，抛出异常
-            return EmailConfirmRequest
+            response.raise_for_status()
+            return request_data
 
         except httpx.HTTPStatusError as e:
+            logger.error(e)
             raise HTTPException(
                 status_code=e.response.status_code,
                 detail=e.response.text
@@ -81,7 +82,7 @@ async def send_smtp_email(email_info: EmailConfirmResponseBase):
 
     try:
         if request_data.last_smtp_port == 587:
-            # 同步操作转为异步（使用线程池）
+            # asny step use thread pool
             with smtplib.SMTP(request_data.last_smtp_server, request_data.last_smtp_port, timeout=10) as server:
                 logger.info(f'smtp port {request_data.last_smtp_port}')
                 server.starttls(context=context)
@@ -112,7 +113,6 @@ async def send_smtp_email(email_info: EmailConfirmResponseBase):
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         raise email_send_exception
-
 
 EmailConfirmSMTPDep = Annotated[EmailConfirmResponseBase, Depends(send_smtp_email)]
 EmailConfirmDep = Annotated[EmailConfirmResponseBase, Depends(send_mailgun_message)]
