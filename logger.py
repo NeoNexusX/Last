@@ -3,6 +3,7 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 from colorama import init, Fore, Back, Style
+
 init(autoreset=True)  # 自动重置颜色
 
 
@@ -21,15 +22,34 @@ class ColorFormatter(logging.Formatter):
 
     def format(self, record):
         original_message = super().format(record)
-
         # get color
         color = self.LEVEL_COLORS.get(record.levelno, Fore.RESET)
-
         # replace [LEVEL] with color
         colored_level = (
-            f"[{color}{record.levelname}{Fore.RESET}]"
+            f"{color}{record.levelname}{Fore.RESET}"
         )
-        return original_message.replace(f"[{record.levelname}]", colored_level)
+        formatted_record = original_message.replace(f"{record.levelname}", colored_level)
+
+        # multilines helper
+        if '\n' in record.message:
+            # calculate prefix length
+            first_line = formatted_record.split('\n')[0]
+            # len(f"{color}{Fore.RESET}") == 10
+            prefix_length = len(first_line) - len(record.message.split('\n')[0]) - 10
+            # split into sever lines
+            lines = record.message.split('\n')
+            # add first line
+            formatted_lines = [first_line]
+
+            # add prefix
+            for line in lines[1:]:
+                aligned_prefix = ' ' * prefix_length
+                formatted_lines.append(f"{aligned_prefix}{line}")
+
+            # rebuild lines
+            formatted_record = '\n'.join(formatted_lines)
+
+        return formatted_record
 
 
 # 日志级别映射
@@ -53,7 +73,7 @@ class LoggerManager:
         self.backup_count = 5
         self.initialized = False
 
-    def init_app(self, app=None, log_level="info", log_dir='logs'):
+    def init_app(self, log_level="info", log_dir='logs'):
         """init logger system"""
         # set logger level
         self.log_level = LOG_LEVELS.get(log_level.lower(), logging.INFO)
@@ -68,11 +88,6 @@ class LoggerManager:
 
         # configure root logger
         self._configure_root_logger()
-
-        # if provide app logger
-        if app:
-            # set app logger as my logger
-            app.logger = self.get_logger("main.fastapi")
 
         self.initialized = True
         return self
@@ -92,10 +107,10 @@ class LoggerManager:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(self.log_level)
         formatter = logging.Formatter(
-            '[%(levelname)s] %(asctime)s %(lineno)d  %(name)s - %(message)s'
+            '%(levelname)s: %(asctime)s %(lineno)d  %(name)s - %(message)s'
         )
         console_formatter = ColorFormatter(  # console Formatter for colors
-            '[%(levelname)s] %(asctime)s %(lineno)d %(name)s - %(message)s',
+            '%(levelname)s:     %(asctime)s %(lineno)d %(name)s - %(message)s',
             datefmt='%y-%m-%d %H:%M'
         )
         console_handler.setFormatter(console_formatter)
@@ -161,6 +176,11 @@ class LoggerManager:
 
 # 创建日志管理器单例实例
 logger_manager = LoggerManager()
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
+
+# 初始化日志管理器
+logger_manager.init_app(log_level=LOG_LEVEL, log_dir=os.getenv("LOG_DIR", "logs"))
 
 
 # 获取日志器的便捷函数

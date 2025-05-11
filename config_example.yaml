@@ -1,0 +1,11 @@
+server:
+  name: bionet
+  port: 8000
+  host: 0.0.0.0
+  log_level: debug
+  log_dir: logs
+
+database:
+  name: bionet
+  path: database/
+  thread : False

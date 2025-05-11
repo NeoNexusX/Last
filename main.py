@@ -1,16 +1,15 @@
-import os
+import uvicorn
 from contextlib import asynccontextmanager
 from typing import Annotated
-
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from api.email_api import EmailConfirmDep, EmailConfirmSMTPDep
 from api.server_api import ServerDep, ServerAccountUpdater, ServerAccountCreater, ServerAccountdel
 from api.user_api import UserLoginDep, token_authen, UserCreateDep, UserUpdateDep, UserDeleDep
 from database.db import create_db_and_tables
+from envset.config import get_config
 from envset.envset import EnvSet
-from logger import logger_manager, get_logger
+from logger import get_logger
 from models.auth import Token
 from models.email_models import EmailConfirmRequest
 from models.server_models import ServerAccountPublic
@@ -20,30 +19,24 @@ from ssh.ssh_manager import ssh_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 启动时执行
+    # start run
     create_db_and_tables()
     EnvSet()
     yield
-    # 关闭时执行（可选清理逻辑）
+    # close run
     await ssh_manager.close_all_connections()
 
 
 app = FastAPI(lifespan=lifespan)
 
-LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
-
-# 初始化日志管理器
-logger_manager.init_app(
-    app=app,
-    log_level=LOG_LEVEL,
-    log_dir=os.getenv("LOG_DIR", "logs")
-)
-
-# 获取应用主日志器
+# get the main logger
 logger = get_logger("main")
 
-origins = ["*", ]
+# get config
+config = get_config()
 
+# CORSMiddleware
+origins = ["*", ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -52,6 +45,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+#########################
+# API
+#########################
 
 @app.post("/login")
 async def login(token: UserLoginDep) -> Token:
@@ -109,3 +106,14 @@ async def create_user_server(email: EmailConfirmDep):
 @app.post("/emailsmtprequest", response_model=EmailConfirmRequest)
 async def create_user_server(email: EmailConfirmSMTPDep):
     return email
+
+
+# 新增：Uvicorn 启动配置
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",  # 模块名:FastAPI 实例名
+        host=config.server.host,  # 监听所有网络接口
+        port=config.server.port,  # 端口号
+        log_level=config.server.log_level,  # 日志级别
+        reload=True,  # 开发时自动重载
+    )

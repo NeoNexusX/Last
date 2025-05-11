@@ -1,12 +1,15 @@
 from typing import Annotated
 from fastapi import Depends
 from sqlmodel import SQLModel, create_engine, Session
+from envset.config import get_config
 
-sqlite_file_name = "database/bionet.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+config = get_config()
 
-connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
+# read in settings
+sqlite_file_name = config.database.path + config.database.name + ".db"
+
+engine = create_engine(url=f"sqlite:///{sqlite_file_name}",
+                       connect_args={"check_same_thread": config.database.thread})
 
 
 def get_session():
