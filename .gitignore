@@ -176,3 +176,4 @@ cython_debug/
 #project settings
 *.db
 .idea
+config.yaml

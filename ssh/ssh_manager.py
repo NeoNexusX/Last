@@ -18,7 +18,7 @@ class SSHConnectionManager:
         """create or reuse ssh connection"""
         connection_key = f"{username}@{ip}"
 
-        # if connection don't have a lock create a lock
+        # if connection doesn't have a lock, create a lock
         if connection_key not in self.locks:
             self.locks[connection_key] = asyncio.Lock()
 
@@ -33,12 +33,12 @@ class SSHConnectionManager:
                     if transport and transport.is_active():
                         return conn
                     else:
-                        # connect is inactive recreate
+                        # connect is inactive recreation
                         logger.info(f"Connection {connection_key} is inactive, recreating")
                 except Exception as e:
                     logger.warning(f"Error checking connection {connection_key}: {str(e)}")
 
-            # create a new connect
+            # create a new connecting
             try:
                 logger.info(f"Creating new SSH connection to {connection_key}")
                 connection = Connection(
@@ -63,6 +63,7 @@ class SSHConnectionManager:
 
             except Exception as e:
                 logger.error(f"Failed to create new SSH connection to {connection_key}: {str(e)}")
+                return None
 
     async def close_connection(self, ip: str, username: str, port=22):
         """close specific SSH connection"""
