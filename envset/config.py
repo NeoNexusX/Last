@@ -50,8 +50,8 @@ class ConfigCreate:
         return self.config
 
 
-config = ConfigCreate()
+CONFIG = ConfigCreate()
 
 
 def get_config():
-    return config.get_config()
+    return CONFIG.get_config()

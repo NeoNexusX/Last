@@ -1,0 +1,48 @@
+# API for get server state update
+API_Server_Update:
+  type: cmds
+  cmds:
+    hostname: "hostname | cut -d'.' -f1"
+    cpu_info: "grep -m 1 -E 'model name|Hardware' /proc/cpuinfo | awk -F': ' '{print $2}'"
+    cpu_usage: "top -bn1 | awk '/Cpu/ {print 100-$8; exit}'"
+    cpu_cores: "nproc"
+    memory_info: "free -b | awk '/Mem:/ {print $2,$3}'"
+    disk_info: "df -B1 --output=target,size,used,pcent | tail -n +2"
+    gpu_info: "which nvidia-smi && nvidia-smi --query-gpu=name,utilization.gpu,memory.total,memory.used --format=csv,noheader,nounits || echo 'none'"
+  activate: true
+
+# API for Change passwd
+API_Change_Code:
+  type: inter_cmds
+  cmds:
+    change: "passwd"
+  sequence:
+    a: "old_passwd"
+    b: "new_passwd"
+    c: "new_passwd"
+  flag:
+    a: "successfully"
+    b: "updated"
+    c: "changing"
+  activate: true
+
+# Task for mount NAS
+Task_Mount_NAS:
+  type: task
+  cycle: once
+  trigger: hand
+  cmds:
+    mount_nas: "sudo mount -t nfs -o soft,sync 192.168.1.1:/mnt/Bionet_01/Data /home/Datasets"
+  sequence: "account_passwd"
+  activate: true
+
+
+# Task for mount NAS
+Task_Docker_Mount:
+  type: task
+  cycle: once
+  trigger: hand
+  cmds:
+    mount_docker: "sudo mount /dev/docker/docker /var/lib/docker"
+  sequence: "account_passwd"
+  activate: true

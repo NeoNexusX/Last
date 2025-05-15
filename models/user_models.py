@@ -1,5 +1,4 @@
 from sqlmodel import Field, SQLModel
-
 from logger import get_logger
 
 # 获取服务器状态模块的日志器

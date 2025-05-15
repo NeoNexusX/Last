@@ -1,9 +1,8 @@
 import io
 from datetime import datetime
-from email.policy import default
-from typing import Annotated, Dict, Any
+from typing import Annotated
 from fastapi import HTTPException, Depends
-from sqlmodel import select, Session
+from sqlmodel import select
 from starlette import status
 from api.user_api import TokenDep
 from database.db import SessionDep
@@ -11,6 +10,7 @@ from logger import get_logger
 from models.server_models import ServerPublic, DiskInfo, GPUInfo, \
     ServerAccountDB, ServerAccountUpdate, ServerPublicList, ServerAccountPublic
 from ssh.ssh_manager import get_ssh_connection, execute_commands
+from task.task_pool import get_tasks
 
 logger = get_logger("main.server_status")
 
@@ -65,6 +65,7 @@ def _format_bytes(bytes_str: str) -> str:
 #########################
 # Util
 #########################
+# TODO：optimize the function and fix result return
 async def get_server_status_linux(ip: str,
                                   username: str,
                                   password: str, port=22) -> ServerPublic:
@@ -77,49 +78,34 @@ async def get_server_status_linux(ip: str,
                             server_ip=ip,
                             server_port=port)
 
-    commands = {
-        "hostname": "hostname | cut -d'.' -f1",
-        "cpu_info": """if grep -q 'model name' /proc/cpuinfo; then
-                            grep -m 1 'model name' /proc/cpuinfo | awk -F': ' '{print $2}'
-                        elif grep -q 'Hardware' /proc/cpuinfo; then
-                            grep -m 1 'Hardware' /proc/cpuinfo | awk -F': ' '{print $2}'
-                        else
-                            echo "cpu unknow"
-                        fi
-                        """,
-        "cpu_usage": "top -b -n1 | grep -F 'Cpu(s)' | awk -v RS=',' '/id/{gsub(\"%id\",\"\",$0); print 100 - $1}'",
-        "cpu_cores": "nproc",
-        "memory_info": "free -b | awk '/Mem:/ {print $2,$3}'",
-        "disk_info": "df -B1 --output=target,size,used,pcent | tail -n +2",
-        "gpu_check": "which nvidia-smi && nvidia-smi --query-gpu=name,utilization.gpu,memory.total,memory.used --format=csv,noheader,nounits || echo 'none'"
-    }
+    commands = get_tasks().get_cmds()['API_Server_Update']
 
-    results = await execute_commands(connection, commands)
+    results = await execute_commands(connection, commands.cmds)
 
     # get hostname
-    hostname = results.get("hostname", f"server-{ip.split('.')[-1]}").strip()
+    hostname = results.get("hostname", f"server-{ip.split('.')[-1]}").stdout.strip()
 
     # deal cpu info
-    cpu = results.get("cpu_info", "")
+    cpu = results.get("cpu_info", "").stdout.strip()
 
     # get cpu usage
-    cpu_usage_str = results.get("cpu_usage", "0").strip()
+    cpu_usage_str = results.get("cpu_usage", "-1").stdout.strip()
     try:
         cpu_usage = float(cpu_usage_str)
     except ValueError:
         cpu_usage = -1
 
-    cpucores = int(results.get("cpu_cores", "-1").strip())
+    cpucores = int(results.get("cpu_cores", "-1").stdout.strip())
 
     # get memory info
-    memory_values = results.get("memory_info", "0 0").split()
+    memory_values = results.get("memory_info", "0 0").stdout.split()
     memory_total = _format_bytes(memory_values[0]) if len(memory_values) > 0 else "0"
     memory_used = _format_bytes(memory_values[1]) if len(memory_values) > 1 else "0"
     memory_usage = (int(memory_values[1]) / int(memory_values[0])) * 100 if len(memory_values) >= 2 else 0.0
 
     # get disk usage
     disks = []
-    for line in results.get("disk_info", "").splitlines():
+    for line in results.get("disk_info", "").stdout.strip().splitlines():
         parts = line.strip().split()
         if len(parts) >= 4 and not any(x in parts[0] for x in ["tmpfs", "udev"]):
             disks.append(DiskInfo(
@@ -131,7 +117,7 @@ async def get_server_status_linux(ip: str,
 
     # get gpu info
     gpus = []
-    gpu_data = results.get("gpu_check", "")
+    gpu_data = results.get("gpu_info", "").stdout.strip()
     if gpu_data != "none":
         for line in gpu_data.splitlines():
             if ',' in line:
@@ -139,8 +125,8 @@ async def get_server_status_linux(ip: str,
                 gpus.append(GPUInfo(
                     model=model,
                     usage=float(usage),
-                    memory_total=f"{mem_total} MiB",
-                    memory_used=f"{mem_used} MiB"
+                    memory_total=f"{mem_total} MB",
+                    memory_used=f"{mem_used} MB"
                 ))
 
     return ServerPublic(
@@ -164,8 +150,8 @@ async def get_server_status_linux(ip: str,
 
 async def update_server_password_linux(ip: str,
                                        username: str,
-                                       old_password: str,
-                                       new_password: str,
+                                       old_passwd: str,
+                                       new_passwd: str,
                                        port=22) -> dict[str, str]:
     """
     Update server user password via SSH
@@ -174,54 +160,46 @@ async def update_server_password_linux(ip: str,
         :param port: host ip port
         :param ip: host ip
         :param username: host username
-        :param old_password: Current password
-        :param new_password: New password
+        :param old_passwd: Current password
+        :param new_passwd: New password
 
     Returns:
         Operation result dictionary
     """
+
     # Password update method (interactive)
-    password_change_method = {
-        "command": "passwd",
-        "input_sequence": [
-            old_password + "\n",  # Current password
-            new_password + "\n",  # New password
-            new_password + "\n"  # Confirm new password
-        ],
-        "success_indicators": [
-            "successfully",
-            "password updated",
-            "passwd: password updated successfully"
-        ]
-    }
+    commands = get_tasks().get_inter_cmds()['API_Change_Code']
+
+    for key in commands.sequence:
+        commands.sequence[key] = locals()[commands.sequence[key]]
 
     # create a stream
     input_stream = io.BytesIO(
-        ''.join(password_change_method["input_sequence"]).encode('utf-8')
+        '\n'.join(commands.sequence.values()).encode('utf-8')
     )
     # Run password change command
-    connection = await get_ssh_connection(ip, username, old_password, port)
+    connection = await get_ssh_connection(ip, username, old_passwd, port)
 
     if not connection:
-        raise ConnectionError("Failed to connect to server")
+        return {"status": f"password is not right in our database, please update server information by admin"}
 
-    result = connection.run(
-        password_change_method["command"],
-        in_stream=input_stream,  # use iostream
-        hide=True,
-        timeout=10,  # 10s timeout
+    result = await execute_commands(
+        connection,
+        commands.cmds,
+        in_stream=input_stream
     )
 
-    exit_code = result.exited
-    stdout = result.stdout.lower()
-    stderr = result.stderr.lower()
+    exit_code = result.get('change').exited
+    stdout = result.get('change').stdout.lower()
+    stderr = result['change'].stderr.lower()
 
     # Check success indicators
-    success_phrases = ["successfully", "changing"]
-    if exit_code == 0 and any(p in stdout for p in success_phrases):
+    if exit_code == 0 and any(p in stdout for p in commands.flag.values()):
+        logger.info(f"{username} : Successfully updated server password")
         return {"status": "success"}
     elif exit_code == 10:
-        return {"status": f"password is not allowed,{stderr}"}
+        logger.error(f"{username} : password is not allowed,{stderr}")
+        return {"status": f"password is not allowed"}
 
     return {"status": "failed"}
 
@@ -294,8 +272,8 @@ async def update_user_server_info(user: TokenDep, server_new: ServerAccountUpdat
     ssh_result = await update_server_password_linux(
         ip=existing_server.server_ip,
         username=existing_server.account_name,
-        old_password=existing_server.account_password,
-        new_password=server_new.account_password_new,
+        old_passwd=existing_server.account_password,
+        new_passwd=server_new.account_password_new,
         port=existing_server.server_port
     )
 
@@ -319,7 +297,8 @@ async def create_user_server(user: TokenDep, server: ServerAccountDB, session: S
                                          server.server_port == ServerAccountDB.server_port)
     existing_server = session.execute(stmt).scalar_one_or_none()
     if existing_server is None:
-        result = await test_server_linux(server.server_ip, server.account_name, server.account_password, port=server.server_port)
+        result = await test_server_linux(server.server_ip, server.account_name, server.account_password,
+                                         port=server.server_port)
         if result['status'] == "success":
             session.add(server)
             session.commit()

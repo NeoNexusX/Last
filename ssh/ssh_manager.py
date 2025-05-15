@@ -1,8 +1,18 @@
 from typing import Dict, Annotated
 from fastapi import Depends
 import asyncio
-from fabric import Connection
+from fabric import Connection, Result
 from logger import get_logger
+from types import SimpleNamespace
+
+empty_result = SimpleNamespace(
+    stdout="",
+    stderr="",
+    exited=1,      # 非 0 表示失败
+    ok=False,
+    failed=True,
+    command=""
+)
 
 # logger for ssh
 logger = get_logger("main.ssh")
@@ -98,26 +108,29 @@ async def get_ssh_connection(ip: str, username: str, password: str, port=22) -> 
 
 
 # batch to run execute_commands
-async def execute_commands(connection: Connection, commands: Dict[str, str]) -> Dict[str, str]:
+async def execute_commands(connection: Connection, commands: Dict[str, str], in_stream=None) -> Dict[str, Result]:
     """
     Args:
-        connection: SSH connection
-        commands: command dicts，{name: commands str}
-
+        :param connection: SSH connection
+        :param commands: command dicts，{name: commands str}
+        :param in_stream:
     Returns:
         Dict[str, str]: results
     """
     results = {}
 
     for name, cmd in commands.items():
+        result = empty_result
         try:
             result = connection.run(cmd,
+                                    in_stream=in_stream,
                                     hide=True,
+                                    warn=True,
                                     timeout=10)
-            results[name] = result.stdout.strip()
         except Exception as e:
-            results[name] = f"Error: {str(e)}"
+            logger.error(f"Error executing command: {name}: {str(e)}")
 
+        results[name] = result
     return results
 
 

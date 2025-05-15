@@ -15,6 +15,8 @@ from models.email_models import EmailConfirmRequest
 from models.server_models import ServerAccountPublic
 from models.user_models import UserInDB, UserPublic
 from ssh.ssh_manager import ssh_manager
+from task.scheduler import SCHEDULER
+from task.task_pool import get_tasks
 
 
 @asynccontextmanager
@@ -22,8 +24,11 @@ async def lifespan(app: FastAPI):
     # start run
     create_db_and_tables()
     EnvSet()
+    SCHEDULER.start()
+    get_tasks()
     yield
     # close run
+    SCHEDULER.shutdown()
     await ssh_manager.close_all_connections()
 
 
@@ -108,7 +113,7 @@ async def create_user_server(email: EmailConfirmSMTPDep):
     return email
 
 
-# 新增：Uvicorn 启动配置
+# update ：uvicorn run config
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",  # 模块名:FastAPI 实例名
