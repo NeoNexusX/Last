@@ -78,7 +78,7 @@ async def get_server_status_linux(ip: str,
                             server_ip=ip,
                             server_port=port)
 
-    commands = get_tasks().get_cmds()['API_Server_Update']
+    commands = get_tasks().get_cmds()['CMD_Server_Update']
 
     results = await execute_commands(connection, commands.cmds)
 
@@ -168,14 +168,14 @@ async def update_server_password_linux(ip: str,
     """
 
     # Password update method (interactive)
-    commands = get_tasks().get_inter_cmds()['API_Change_Code']
+    commands = get_tasks().get_cmds()['CMD_Change_Code']
 
-    for key in commands.sequence:
-        commands.sequence[key] = locals()[commands.sequence[key]]
+    input_values = [locals()[v] for v in commands.sequence.values()]
+
 
     # create a stream
     input_stream = io.BytesIO(
-        '\n'.join(commands.sequence.values()).encode('utf-8')
+        '\n'.join(input_values).encode('utf-8')
     )
     # Run password change command
     connection = await get_ssh_connection(ip, username, old_passwd, port)

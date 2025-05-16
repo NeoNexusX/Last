@@ -1,14 +1,13 @@
 import yaml
 from pydantic import ValidationError
 from logger import get_logger
-from models.tasks_models import TASK, CMDS, INTER_CMDS
+from models.tasks_models import TASK, CMDS
 
 logger = get_logger("main.task")
 
 CLASS_MAP = {
     "task": TASK,
     "cmds": CMDS,
-    "inter_cmds": INTER_CMDS,
 }
 
 
@@ -16,7 +15,6 @@ class TaskCreate:
     def __init__(self, tasks_path):
         self.task = {}
         self.cmds = {}
-        self.inter_cmds = {}  # Interaction commands
         self.tasks_path = tasks_path
 
     def read(self):
@@ -45,11 +43,8 @@ class TaskCreate:
     def get_tasks(self):
         return self.task
 
-    def get_inter_cmds(self):
-        return self.inter_cmds
-
     def get_all_task(self):
-        if len(self.task) == 0:
+        if len(self.task) == 0 or len(self.cmds) == 0:
             self.read()
         else:
             logger.info("tasks queue is empty ,check it !")

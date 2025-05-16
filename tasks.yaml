@@ -1,5 +1,6 @@
 # API for get server state update
-API_Server_Update:
+CMD_Server_Update:
+  platform: linux
   type: cmds
   cmds:
     hostname: "hostname | cut -d'.' -f1"
@@ -12,8 +13,9 @@ API_Server_Update:
   activate: true
 
 # API for Change passwd
-API_Change_Code:
-  type: inter_cmds
+CMD_Change_Code:
+  platform: linux
+  type: cmds
   cmds:
     change: "passwd"
   sequence:
@@ -27,22 +29,32 @@ API_Change_Code:
   activate: true
 
 # Task for mount NAS
-Task_Mount_NAS:
-  type: task
-  cycle: once
-  trigger: hand
+CMD_Mount_NAS:
+  platform: linux
+  type: cmds
   cmds:
     mount_nas: "sudo mount -t nfs -o soft,sync 192.168.1.1:/mnt/Bionet_01/Data /home/Datasets"
-  sequence: "account_passwd"
+  sequence: 
+    a: "account_passwd"
   activate: true
 
 
 # Task for mount NAS
-Task_Docker_Mount:
-  type: task
-  cycle: once
-  trigger: hand
+CMD_Docker_Mount:
+  platform: linux
+  type: cmds
   cmds:
     mount_docker: "sudo mount /dev/docker/docker /var/lib/docker"
-  sequence: "account_passwd"
+  sequence: 
+    a: "account_passwd"
+  activate: true
+
+Task_Boot_Host:
+  platform: linux
+  type: task
+  trigger: hand
+  cycle: once
+  tasks:
+    - CMD_Mount_NAS
+    - CMD_Docker_Mount
   activate: true
