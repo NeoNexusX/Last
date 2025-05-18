@@ -177,3 +177,4 @@ cython_debug/
 *.db
 .idea
 config.yaml
+.DS_Store

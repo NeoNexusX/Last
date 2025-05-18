@@ -8,8 +8,8 @@ logger = get_logger("main.task")
 CLASS_MAP = {
     "task": TASK,
     "cmds": CMDS,
+    
 }
-
 
 class TaskCreate:
     def __init__(self, tasks_path):
@@ -19,7 +19,7 @@ class TaskCreate:
 
     def read(self):
         try:
-            with open(self.tasks_path, "r") as file:
+            with open(self.tasks_path, "r", encoding="utf-8") as file:
                 buffer = yaml.safe_load(file)
                 for task_key in buffer:
                     task = buffer[task_key]
@@ -40,10 +40,10 @@ class TaskCreate:
     def get_cmds(self):
         return self.cmds
 
-    def get_tasks(self):
+    def get_task(self):
         return self.task
 
-    def get_all_task(self):
+    def get_all(self):
         if len(self.task) == 0 or len(self.cmds) == 0:
             self.read()
         else:
@@ -54,5 +54,5 @@ TASKS_READER = TaskCreate("tasks.yaml")
 
 
 def get_tasks():
-    TASKS_READER.get_all_task()
+    TASKS_READER.get_all()
     return TASKS_READER
