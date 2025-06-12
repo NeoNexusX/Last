@@ -1,9 +1,10 @@
 from typing import Dict, Annotated
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 import asyncio
 from fabric import Connection, Result
 from logger import get_logger
 from types import SimpleNamespace
+from starlette import status
 
 empty_result = SimpleNamespace(
     stdout="",
@@ -12,6 +13,14 @@ empty_result = SimpleNamespace(
     ok=False,
     failed=True,
     command=""
+)
+ssh_lock_exception = HTTPException(
+    status_code=status.HTTP_404_NOT_FOUND,
+    detail="ssh failed with lock",
+)
+ssh_create_exception = HTTPException(
+    status_code=status.HTTP_404_NOT_FOUND,
+    detail="ssh failed create connection",
 )
 
 # logger for ssh
@@ -45,8 +54,11 @@ class SSHConnectionManager:
                     else:
                         # connect is inactive recreation
                         logger.info(f"Connection {connection_key} is inactive, recreating")
+                    
                 except Exception as e:
-                    logger.warning(f"Error checking connection {connection_key}: {str(e)}")
+                    logger.error(f"Error checking connection {connection_key}: {str(e)}")
+                    raise ssh_lock_exception
+                    
 
             # create a new connecting
             try:
@@ -73,7 +85,7 @@ class SSHConnectionManager:
 
             except Exception as e:
                 logger.error(f"Failed to create new SSH connection to {connection_key}: {str(e)}")
-                return None
+                raise ssh_create_exception
 
     async def close_connection(self, ip: str, username: str, port=22):
         """close specific SSH connection"""
@@ -112,7 +124,7 @@ async def execute_commands(connection: Connection, commands: Dict[str, str], in_
     """
     Args:
         :param connection: SSH connection
-        :param commands: command dicts，{name: commands str}
+        :param commands: command dicts,{name: commands str}
         :param in_stream:
     Returns:
         Dict[str, str]: results

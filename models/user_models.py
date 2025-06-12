@@ -8,6 +8,7 @@ logger = get_logger("main.user_control")
 class UserBase(SQLModel):
     username: str = Field()
     active: bool = Field(default=True)
+    identity: str = Field(default="user")
 
 
 class UserInDB(UserBase, table=True):

@@ -1,60 +1,8 @@
-# API for get server state update
-CMD_Server_Update:
-  platform: linux
-  type: cmds
-  cmds:
-    hostname: "hostname | cut -d'.' -f1"
-    cpu_info: "grep -m 1 -E 'model name|Hardware' /proc/cpuinfo | awk -F': ' '{print $2}'"
-    cpu_usage: "top -bn1 | awk '/Cpu/ {print 100-$8; exit}'"
-    cpu_cores: "nproc"
-    memory_info: "free -b | awk '/Mem:/ {print $2,$3}'"
-    disk_info: "df -B1 --output=target,size,used,pcent | tail -n +2"
-    gpu_info: "which nvidia-smi && nvidia-smi --query-gpu=name,utilization.gpu,memory.total,memory.used --format=csv,noheader,nounits || echo 'none'"
-  activate: true
-
-# API for Change passwd
-CMD_Change_Code:
-  platform: linux
-  type: cmds
-  cmds:
-    change: "passwd"
-  sequence:
-    a: "old_passwd"
-    b: "new_passwd"
-    c: "new_passwd"
-  flag:
-    a: "successfully"
-    b: "updated"
-    c: "changing"
-  activate: true
-
-# Task for mount NAS
-CMD_Mount_NAS:
-  platform: linux
-  type: cmds
-  cmds:
-    mount_nas: "sudo mount -t nfs -o soft,sync 192.168.1.1:/mnt/Bionet_01/Data /home/Datasets"
-  sequence: 
-    a: "account_passwd"
-  activate: true
-
-
-# Task for mount NAS
-CMD_Docker_Mount:
-  platform: linux
-  type: cmds
-  cmds:
-    mount_docker: "sudo mount /dev/docker/docker /var/lib/docker"
-  sequence: 
-    a: "account_passwd"
-  activate: true
-
 Task_Boot_Host:
   platform: linux
-  type: task
   trigger: hand
   cycle: once
   tasks:
     - CMD_Mount_NAS
-    - CMD_Docker_Mount
+    - CMD_Mount_Docker
   activate: true

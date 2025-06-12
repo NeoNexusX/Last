@@ -9,14 +9,15 @@ from api.user_api import UserLoginDep, token_authen, UserCreateDep, UserUpdateDe
 from database.db import create_db_and_tables
 from envset.config import get_config
 from envset.envset import EnvSet
+from job.cmds_pool import get_cmds_all
 from logger import get_logger
 from models.auth import Token
 from models.email_models import EmailConfirmRequest
 from models.server_models import ServerAccountPublic
 from models.user_models import UserInDB, UserPublic
 from ssh.ssh_manager import ssh_manager
-from task.scheduler import SCHEDULER
-from task.task_pool import get_tasks
+from job.scheduler import SCHEDULER
+from job.task_pool import get_tasks_all
 
 
 @asynccontextmanager
@@ -25,7 +26,8 @@ async def lifespan(app: FastAPI):
     create_db_and_tables()
     EnvSet()
     SCHEDULER.start()
-    get_tasks()
+    get_cmds_all()
+    get_tasks_all()
     yield
     # close run
     SCHEDULER.shutdown()
