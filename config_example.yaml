@@ -4,6 +4,7 @@ server:
   host: 0.0.0.0
   log_level: debug
   log_dir: logs
+  admin_email: examplr@example.com
 
 database:
   name: bionet

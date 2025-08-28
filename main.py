@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.email_api import EmailConfirmDep, EmailConfirmSMTPDep
 from api.server_api import ServerDep, ServerAccountUpdater, ServerAccountCreater, ServerAccountdel
-from api.user_api import UserLoginDep, token_authen, UserCreateDep, UserUpdateDep, UserDeleDep
+from api.user_api import UserLoginDep, token_authen, UserCreateDep, UserUpdateDep, UserDeleDep, create_admin_user
 from database.db import create_db_and_tables
 from envset.config import get_config
 from envset.envset import EnvSet
@@ -25,6 +25,8 @@ async def lifespan(app: FastAPI):
     # start run
     create_db_and_tables()
     EnvSet()
+    # admin create
+    await create_admin_user()
     SCHEDULER.start()
     get_cmds_all()
     get_tasks_all()
